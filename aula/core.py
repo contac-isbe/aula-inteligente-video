@@ -46,6 +46,7 @@ class SistemaAsistencia:
         for d in [self.dir_rostros, self.dir_rostros_prueba, self.dir_asistencia, self.dir_sesiones, self.dir_fichas]:
             os.makedirs(d, exist_ok=True)
         self.device = device or ('cuda' if torch.cuda.is_available() else 'cpu')
+        torch.hub.set_dir(os.path.join(base_dir, 'cache'))
         self.mtcnn = MTCNN(image_size=160, margin=20, keep_all=True, post_process=True,
                            min_face_size=self.cfg['tam_min_rostro'], device=self.device)
         self.facenet = InceptionResnetV1(pretrained='vggface2').eval().to(self.device)

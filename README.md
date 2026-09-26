@@ -72,3 +72,5 @@ La futura web reutilizará el núcleo y sustituirá la ventana local por una int
 Estas pruebas no miden la precisión facial. Antes de presentar: comprobar ambas cámaras disponibles, registrar un participante autorizado, reconocerlo durante el video, verificar el CSV y comprobar que volver a entrar no duplica la asistencia.
 
 Validación inicial (26/09/2026): Python 3.11.9 en Windows, cuatro pruebas aprobadas, dependencias sin conflictos y carga de FaceNet en CPU con detección sobre imagen sintética aprobada. Los índices de cámara 0 y 1 no entregaron video en el equipo de preparación; la prueba real de cámara y reconocimiento de participantes queda pendiente.
+
+Prueba posterior con Camo (26/09/2026): un iPad conectado a Camo Studio en Windows entregó video de 1280×720 a OpenCV mediante DirectShow, usando `--camara 0`. La identificación de participantes sigue pendiente de validación. Mantén Camo Camera y Camo Studio activos mientras ejecutas el proyecto.
