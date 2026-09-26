@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+data/
+*.pt
+*.pth
+.env
+tmp/
+tools/migrate.py
