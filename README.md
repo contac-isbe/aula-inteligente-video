@@ -55,6 +55,8 @@ Para comprobar únicamente el video, sin descargar ni cargar modelos:
 
 `R`: registrar la persona visible (debe aparecer exactamente un rostro). `Q`, Escape o cerrar ventana: finalizar y liberar la cámara. El video se pausa durante los formularios de registro.
 
+`E`: eliminar un alumno por su ID. El formulario muestra su nombre y pide confirmación antes de borrar el registro, las fotos de registro y prueba, la ficha y el embedding facial. Las asistencias anteriores se conservan como historial y ya no se cuentan entre los presentes del padrón actual. Puedes registrar nuevamente al alumno con `R`; si usa el mismo ID el mismo día, se conserva su primera asistencia del día. La eliminación no se puede deshacer.
+
 ## Datos locales
 
 `data/` contiene estudiantes, rostros, fichas, embeddings y CSV diarios. Está excluida de Git. Cada integrante tiene su propia base; clonar el código no copia los registros de otra computadora. Registra participantes que autoricen el uso de su rostro. No subas datos reales al repositorio público.

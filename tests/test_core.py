@@ -21,6 +21,8 @@ class CoreTests(unittest.TestCase):
         self.s.archivo_embeddings = str(Path(self.tmp.name) / 'embeddings.pkl')
         self.s.dir_rostros = self.tmp.name
         self.s.dir_asistencia = self.tmp.name
+        self.s.dir_rostros_prueba = str(Path(self.tmp.name) / 'pruebas')
+        self.s.dir_fichas = str(Path(self.tmp.name) / 'fichas')
         self.s.cargar_datos()
 
     def test_reject_path_id(self):
@@ -58,6 +60,45 @@ class CoreTests(unittest.TestCase):
         self.assertTrue(self.s.marcar_asistencia('001', 0.8))
         self.assertNotEqual(first, self.s.archivo_asistencia)
         self.assertTrue(Path(first).exists())
+
+    def test_delete_student_preserves_others_and_history(self):
+        vector = np.zeros(512)
+        vector[0] = 1
+        for codigo in ('001', '002'):
+            carpeta = Path(self.s.agregar_estudiante(codigo, 'Prueba', 'Persona'))
+            (carpeta / 'foto.jpg').write_bytes(b'test')
+            self.s._guardar_embedding(codigo, vector)
+        ficha = Path(self.s.dir_fichas) / '001.jpg'
+        ficha.parent.mkdir()
+        ficha.write_bytes(b'test')
+        prueba = Path(self.s.dir_rostros_prueba) / '001'
+        prueba.mkdir(parents=True)
+        (prueba / 'prueba.jpg').write_bytes(b'test')
+        self.s.marcar_asistencia('001', .8)
+        historial = Path(self.s.archivo_asistencia).read_bytes()
+        self.assertTrue(self.s.eliminar_estudiante('001'))
+        self.assertNotIn('001', self.s.info)
+        self.assertEqual(self.s.ids, ['002'])
+        self.assertFalse((Path(self.s.dir_rostros) / '001').exists())
+        self.assertFalse(ficha.exists())
+        self.assertFalse(prueba.exists())
+        self.assertTrue((Path(self.s.dir_rostros) / '002' / 'foto.jpg').exists())
+        self.assertEqual(Path(self.s.archivo_asistencia).read_bytes(), historial)
+        self.s.cargar_datos()
+        self.assertNotIn('001', self.s.ids)
+        self.s.agregar_estudiante('001', 'Prueba', 'Persona')
+        self.s._guardar_embedding('001', vector)
+        self.assertIn('001', self.s.info)
+        self.assertFalse(self.s.marcar_asistencia('001', .9))
+
+    def test_delete_missing_student_does_not_change_files(self):
+        roster = Path(self.s.archivo_estudiantes).read_bytes()
+        self.assertFalse(self.s.eliminar_estudiante('999'))
+        self.assertEqual(Path(self.s.archivo_estudiantes).read_bytes(), roster)
+
+    def test_delete_rejects_path_id(self):
+        with self.assertRaises(ValueError):
+            self.s.eliminar_estudiante('../otro')
 
 
 if __name__ == '__main__':

@@ -1,4 +1,6 @@
 import os, pickle, datetime, re
+import shutil
+from pathlib import Path
 import numpy as np
 import pandas as pd
 import cv2
@@ -77,6 +79,45 @@ class SistemaAsistencia:
         carpeta = os.path.join(self.dir_rostros, id_estudiante)
         os.makedirs(carpeta, exist_ok=True)
         return carpeta
+
+    def eliminar_estudiante(self, id_estudiante):
+        """Elimina un registro y sus archivos; conserva los CSV de asistencia."""
+        codigo = str(id_estudiante).strip()
+        if not re.fullmatch(r'[A-Za-z0-9_-]{1,64}', codigo):
+            raise ValueError('ID no válido.')
+        estudiantes = self.leer_estudiantes()
+        if codigo not in estudiantes['id_estudiante'].values:
+            return False
+        objetivos = []
+        for directorio, nombre in ((self.dir_rostros, codigo),
+                                  (self.dir_rostros_prueba, codigo),
+                                  (self.dir_fichas, f'{codigo}.jpg')):
+            raiz = Path(directorio).resolve()
+            objetivo = raiz / nombre
+            # Impide borrar un destino fuera de la carpeta prevista mediante enlaces.
+            if objetivo.resolve().parent != raiz or objetivo.is_symlink():
+                raise ValueError('La ruta del alumno apunta fuera de su carpeta. No se eliminó el registro.')
+            objetivos.append(objetivo)
+        base = {}
+        if os.path.exists(self.archivo_embeddings):
+            with open(self.archivo_embeddings, 'rb') as fh:
+                base = pickle.load(fh)
+        base.pop(codigo, None)
+        estudiantes[estudiantes['id_estudiante'] != codigo].to_csv(self.archivo_estudiantes, index=False)
+        try:
+            with open(self.archivo_embeddings, 'wb') as fh:
+                pickle.dump(base, fh)
+            for objetivo in objetivos:
+                if objetivo.is_dir():
+                    shutil.rmtree(objetivo)
+                elif objetivo.exists():
+                    objetivo.unlink()
+        except OSError as exc:
+            raise OSError('Se retiró el alumno del registro, pero no se pudo completar la limpieza de sus archivos.') from exc
+        finally:
+            self.cargar_datos()
+        self.ultimo_evento = f'Alumno {codigo} eliminado del registro'
+        return True
 
     # ------------------------------------------------------------ rostros
     @torch.no_grad()
@@ -256,8 +297,9 @@ class SistemaAsistencia:
                 d.text((tx + 6, ty + 3 + 20 * k), l, font=self.f_bold if k < 2 else self.f_normal, fill=color)
         # barra superior de estado
         d.rectangle([0, 0, W, 48], fill=(31, 56, 100, 210))
+        presentes = sum(codigo in self.info for codigo in self.asistencia)
         d.text((8, 4), f"{self.ahora().strftime('%d/%m/%Y %H:%M:%S')}   |   "
-                       f"Presentes: {len(self.asistencia)}/{len(self.info)}", font=self.f_bold, fill=(255, 255, 255, 255))
+                       f"Presentes: {presentes}/{len(self.info)}", font=self.f_bold, fill=(255, 255, 255, 255))
         d.text((8, 26), self.ultimo_evento, font=self.f_normal, fill=(170, 255, 170, 255))
         return lienzo
 

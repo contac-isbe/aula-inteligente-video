@@ -65,6 +65,34 @@ def registrar(sistema, frame):
         root.destroy()
 
 
+def eliminar(sistema):
+    root = tk.Tk()
+    root.withdraw()
+    try:
+        codigo = simpledialog.askstring('Eliminar alumno', 'Código del estudiante a eliminar:', parent=root)
+        if not codigo or not codigo.strip():
+            return
+        codigo = codigo.strip()
+        sistema.cargar_datos()
+        inf = sistema.info.get(codigo)
+        if not inf:
+            messagebox.showinfo('Eliminar alumno', 'No hay un alumno registrado con ese código.', parent=root)
+            return
+        confirmar = messagebox.askyesno(
+            'Confirmar eliminación',
+            f"ID: {codigo}\n{inf['apellidos']}, {inf['nombres']}\n\n"
+            'Se borrarán su registro, fotos, ficha y base facial.\n'
+            'Las asistencias anteriores se conservarán como historial.\n'
+            'Esta eliminación no se puede deshacer.\n\n¿Eliminar al alumno?', parent=root)
+        if confirmar:
+            sistema.eliminar_estudiante(codigo)
+            messagebox.showinfo('Eliminar alumno', 'Alumno eliminado. Puedes registrarlo de nuevo con R.', parent=root)
+    except (ValueError, OSError) as exc:
+        messagebox.showerror('Eliminar alumno', str(exc), parent=root)
+    finally:
+        root.destroy()
+
+
 def main():
     parser = argparse.ArgumentParser(description='Video local del aula inteligente')
     parser.add_argument('--camara', type=int, default=0, help='Índice: 0 suele ser integrada, 1 suele ser USB. Depende del equipo.')
@@ -113,7 +141,7 @@ def main():
                 salida = cv2.cvtColor(np.array(sistema.dibujar(lienzo, [], caras).convert('RGB')), cv2.COLOR_RGB2BGR)
             else:
                 salida = frame.copy()
-            cv2.putText(salida, f'Camara {args.camara} | {fps:.1f} FPS | R: registrar | Q: salir',
+            cv2.putText(salida, f'Camara {args.camara} | {fps:.1f} FPS | R: registrar | E: eliminar | Q: salir',
                         (8, salida.shape[0] - 12), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
             cv2.imshow('Aula inteligente - Video', salida)
             key = cv2.waitKey(1) & 0xFF
@@ -121,6 +149,9 @@ def main():
                 break
             if key == ord('r') and sistema:
                 registrar(sistema, frame.copy())
+                votos.clear()
+            if key == ord('e') and sistema:
+                eliminar(sistema)
                 votos.clear()
     finally:
         if cap is not None:
