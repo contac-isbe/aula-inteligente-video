@@ -40,6 +40,13 @@ Desde una terminal en la carpeta del proyecto:
 
 Los índices dependen del equipo: 0 no siempre es la integrada y 1 no siempre es USB. Si no abre, prueba otro índice y cierra Teams, Zoom u otras aplicaciones que usen la cámara. Comprueba el acceso de aplicaciones de escritorio a la cámara en la configuración de privacidad de Windows.
 
+El programa prueba primero Media Foundation y después DirectShow. Si la cámara abre pero la imagen sale negra, prueba el otro método explícitamente:
+
+```powershell
+.\iniciar.cmd --camara 0 --backend msmf
+.\iniciar.cmd --camara 0 --backend dshow
+```
+
 Para comprobar únicamente el video, sin descargar ni cargar modelos:
 
 ```powershell
@@ -73,4 +80,3 @@ Estas pruebas no miden la precisión facial. Antes de presentar: comprobar ambas
 
 Validación inicial (26/09/2026): Python 3.11.9 en Windows, cuatro pruebas aprobadas, dependencias sin conflictos y carga de FaceNet en CPU con detección sobre imagen sintética aprobada. Los índices de cámara 0 y 1 no entregaron video en el equipo de preparación; la prueba real de cámara y reconocimiento de participantes queda pendiente.
 
-Prueba posterior con Camo (26/09/2026): un iPad conectado a Camo Studio en Windows entregó video de 1280×720 a OpenCV mediante DirectShow, usando `--camara 0`. La identificación de participantes sigue pendiente de validación. Mantén Camo Camera y Camo Studio activos mientras ejecutas el proyecto.

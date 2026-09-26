@@ -12,8 +12,13 @@ from PIL import Image
 from aula.core import SistemaAsistencia
 
 
-def abrir_camara(indice):
-    for backend in (cv2.CAP_DSHOW, cv2.CAP_MSMF, cv2.CAP_ANY):
+def abrir_camara(indice, metodo='auto'):
+    metodos = {
+        'auto': (cv2.CAP_MSMF, cv2.CAP_DSHOW, cv2.CAP_ANY),
+        'msmf': (cv2.CAP_MSMF,),
+        'dshow': (cv2.CAP_DSHOW,),
+    }
+    for backend in metodos[metodo]:
         cap = cv2.VideoCapture(indice, backend)
         if cap.isOpened():
             ok, frame = cap.read()
@@ -66,6 +71,8 @@ def main():
     parser.add_argument('--datos', type=Path, default=Path(__file__).resolve().parents[1] / 'data')
     parser.add_argument('--umbral', type=float, default=0.60)
     parser.add_argument('--solo-video', action='store_true', help='Comprobar cámara sin cargar modelos faciales')
+    parser.add_argument('--backend', choices=('auto', 'msmf', 'dshow'), default='auto',
+                        help='Método de captura de Windows; auto prueba Media Foundation primero')
     args = parser.parse_args()
     if not 0 < args.umbral <= 1:
         parser.error('--umbral debe estar entre 0 y 1')
@@ -76,7 +83,7 @@ def main():
             print('Cargando reconocimiento facial; la primera ejecución descarga pesos del modelo.')
             sistema = SistemaAsistencia(str(args.datos), cfg={'umbral_similitud': args.umbral})
             sistema.iniciar_sesion()
-        cap = abrir_camara(args.camara)
+        cap = abrir_camara(args.camara, args.backend)
         votos = Counter()
         anterior = time.perf_counter()
         while True:
